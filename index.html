@@ -1,0 +1,2583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <title>🌊 八莉岛 · 梦幻星海</title>
+
+    <!-- LeanCloud SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@5.0.0/dist/av-min.js">
+    </script>
+
+    <!-- Google Font (可选) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ============================================================
+           0. CSS 变量 & 重置
+           ============================================================ */
+        :root {
+            --blue-1: #d9eaf7;
+            --blue-2: #b5d4e8;
+            --blue-3: #7fb3d5;
+            --blue-4: #4f8db5;
+            --gray-1: #f0f2f5;
+            --gray-2: #e2e6ec;
+            --gray-3: #b8c2cc;
+            --gray-4: #6b7a88;
+            --white-glass: rgba(255, 255, 255, 0.60);
+            --white-glass-strong: rgba(255, 255, 255, 0.78);
+            --shadow: 0 12px 48px rgba(79, 141, 181, 0.12);
+            --radius: 28px;
+            --radius-sm: 18px;
+            --font: 'Quicksand', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --max-width: 1200px;
+            --nav-height: 68px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background: linear-gradient(145deg, #eef6fc 0%, #d9eaf7 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* ============================================================
+           1. 应用容器 — 完全响应式
+           ============================================================ */
+        #app {
+            width: 100%;
+            min-height: 100vh;
+            max-width: var(--max-width);
+            background: var(--white-glass);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid rgba(255, 255, 255, 0.25);
+            border-right: 1px solid rgba(255, 255, 255, 0.25);
+            margin: 0 auto;
+        }
+
+        /* 桌面端大圆角 */
+        @media (min-width: 1024px) {
+            #app {
+                border-radius: 40px;
+                margin: 24px auto;
+                min-height: calc(100vh - 48px);
+                max-height: calc(100vh - 48px);
+                box-shadow: 0 20px 64px rgba(79, 141, 181, 0.15), var(--shadow);
+            }
+        }
+
+        @media (max-width: 1023px) {
+            #app {
+                border-radius: 0;
+                min-height: 100vh;
+                max-height: 100vh;
+                border-left: none;
+                border-right: none;
+                margin: 0;
+            }
+        }
+
+        /* ============================================================
+           2. 启动动画 (Splash)
+           ============================================================ */
+        #splash {
+            position: absolute;
+            inset: 0;
+            z-index: 999;
+            background: linear-gradient(145deg, #d9eaf7, #b5d4e8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            padding: 20px;
+        }
+        #splash.hide {
+            opacity: 0;
+            transform: scale(1.05);
+            pointer-events: none;
+        }
+
+        .splash-slider {
+            width: min(76%, 320px);
+            aspect-ratio: 1/1;
+            border-radius: 48px;
+            overflow: hidden;
+            box-shadow: 0 16px 60px rgba(79, 141, 181, 0.25);
+            position: relative;
+            background: var(--blue-2);
+            flex-shrink: 0;
+        }
+        .splash-slider .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.6rem, 6vw, 2.8rem);
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            opacity: 0;
+            transition: opacity 1s ease;
+            padding: 20px;
+            text-align: center;
+            gap: 6px;
+        }
+        .splash-slider .slide.active {
+            opacity: 1;
+        }
+        .splash-slider .slide:nth-child(1) {
+            background: linear-gradient(135deg, #b5d4e8, #7fb3d5);
+        }
+        .splash-slider .slide:nth-child(2) {
+            background: linear-gradient(135deg, #d4b8e0, #b38bc8);
+        }
+        .splash-slider .slide:nth-child(3) {
+            background: linear-gradient(135deg, #b5d4e8, #8fc1e0);
+        }
+        .splash-slider .slide .sub {
+            font-size: clamp(0.7rem, 2vw, 1rem);
+            font-weight: 400;
+            opacity: 0.85;
+        }
+
+        .splash-title {
+            margin-top: clamp(20px, 4vh, 40px);
+            font-size: clamp(2rem, 6vw, 3.2rem);
+            font-weight: 700;
+            color: #4f8db5;
+            letter-spacing: 6px;
+            text-shadow: 0 2px 12px rgba(79, 141, 181, 0.15);
+        }
+        .splash-sub {
+            font-size: clamp(0.75rem, 2vw, 1rem);
+            color: #6b7a88;
+            margin-top: 4px;
+            letter-spacing: 3px;
+        }
+        .splash-dots {
+            display: flex;
+            gap: clamp(8px, 2vw, 16px);
+            margin-top: clamp(16px, 3vh, 32px);
+        }
+        .splash-dots span {
+            width: clamp(10px, 1.5vw, 14px);
+            height: clamp(10px, 1.5vw, 14px);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transition: 0.3s;
+            position: relative;
+        }
+        .splash-dots span.active {
+            background: #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            transform: scale(1.2);
+        }
+
+        /* ============================================================
+           3. 登录页
+           ============================================================ */
+        #login {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            background: var(--white-glass-strong);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(24px, 6vw, 56px) clamp(20px, 5vw, 48px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        #login.hide {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        #login .logo {
+            font-size: clamp(3rem, 10vw, 5rem);
+            margin-bottom: 4px;
+            filter: drop-shadow(0 4px 20px rgba(79, 141, 181, 0.2));
+        }
+        #login .site-name {
+            font-size: clamp(2rem, 7vw, 3.6rem);
+            font-weight: 700;
+            color: #4f8db5;
+            letter-spacing: 8px;
+        }
+        #login .site-sub {
+            font-size: clamp(0.75rem, 2vw, 1.1rem);
+            color: #6b7a88;
+            margin-bottom: clamp(24px, 5vh, 48px);
+            letter-spacing: 4px;
+        }
+
+        #login .input-group {
+            width: 100%;
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        #login .input-group input {
+            padding: clamp(14px, 2vh, 20px) clamp(16px, 3vw, 24px);
+            border: 2px solid rgba(181, 212, 232, 0.4);
+            border-radius: 20px;
+            font-size: clamp(1rem, 3vw, 1.4rem);
+            text-align: center;
+            letter-spacing: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            outline: none;
+            transition: 0.3s;
+            font-weight: 600;
+            color: #3d4d5e;
+            font-family: var(--font);
+        }
+        #login .input-group input:focus {
+            border-color: var(--blue-3);
+            box-shadow: 0 0 0 4px rgba(127, 179, 213, 0.15);
+            background: rgba(255, 255, 255, 0.8);
+        }
+        #login .input-group button {
+            padding: clamp(14px, 2vh, 20px);
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--blue-3), var(--blue-4));
+            color: #fff;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 6px 24px rgba(79, 141, 181, 0.25);
+            letter-spacing: 2px;
+            font-family: var(--font);
+        }
+        #login .input-group button:active {
+            transform: scale(0.96);
+        }
+        #login .login-error {
+            color: #e06c8a;
+            font-size: clamp(0.75rem, 1.5vw, 0.9rem);
+            margin-top: 12px;
+            min-height: 24px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* ============================================================
+           4. 主界面
+           ============================================================ */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            overflow: hidden;
+            min-height: 0;
+        }
+        #main.show {
+            opacity: 1;
+        }
+
+        /* ---- 顶部栏 ---- */
+        .top-bar {
+            padding: clamp(14px, 2.5vh, 24px) clamp(16px, 4vw, 36px) clamp(8px, 1.5vh, 14px) clamp(16px, 4vw, 36px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+            flex-shrink: 0;
+            position: relative;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .top-bar .title {
+            font-size: clamp(1rem, 2.8vw, 1.6rem);
+            font-weight: 700;
+            color: #4f8db5;
+            letter-spacing: 2px;
+        }
+        .top-bar .title span {
+            color: #6b7a88;
+            font-weight: 400;
+            font-size: clamp(0.6rem, 1.2vw, 0.85rem);
+            letter-spacing: 1px;
+        }
+        .top-bar .day-count {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(4px);
+            padding: clamp(4px, 1vh, 8px) clamp(12px, 2vw, 20px);
+            border-radius: 30px;
+            font-size: clamp(0.65rem, 1.4vw, 0.9rem);
+            font-weight: 600;
+            color: #4f8db5;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 12px rgba(79, 141, 181, 0.08);
+            white-space: nowrap;
+        }
+
+        /* 装饰星星 */
+        .top-bar::after {
+            content: '✦ ✧ ✦';
+            position: absolute;
+            right: clamp(70px, 12vw, 160px);
+            top: clamp(8px, 1.5vh, 16px);
+            font-size: clamp(0.5rem, 1vw, 0.8rem);
+            color: var(--blue-2);
+            opacity: 0.6;
+            letter-spacing: 6px;
+            animation: twinkle 3s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes twinkle {
+            0% {
+                opacity: 0.3;
+                transform: translateY(0px);
+            }
+            100% {
+                opacity: 0.8;
+                transform: translateY(-4px);
+            }
+        }
+
+        /* ---- 页面容器 ---- */
+        .page-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: clamp(8px, 1.5vh, 16px) clamp(14px, 3vw, 36px) clamp(70px, 12vh, 100px) clamp(14px, 3vw, 36px);
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .page-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .page-container::-webkit-scrollbar-thumb {
+            background: var(--blue-2);
+            border-radius: 8px;
+        }
+
+        .page {
+            display: none;
+            animation: fadeUp 0.4s ease;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ---- 底部导航 ---- */
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid rgba(255, 255, 255, 0.4);
+            display: flex;
+            justify-content: space-around;
+            padding: clamp(6px, 1vh, 12px) 0 clamp(10px, 2vh, 20px) 0;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        @media (min-width: 1024px) {
+            .bottom-nav {
+                border-radius: 0 0 40px 40px;
+            }
+        }
+        @media (max-width: 1023px) {
+            .bottom-nav {
+                border-radius: 0;
+            }
+        }
+
+        .bottom-nav .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            font-size: clamp(0.5rem, 1.2vw, 0.7rem);
+            color: #8a9aa8;
+            cursor: pointer;
+            transition: 0.3s;
+            padding: clamp(4px, 0.8vh, 10px) clamp(8px, 1.5vw, 20px);
+            border-radius: 30px;
+            background: transparent;
+            border: none;
+            font-family: var(--font);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            min-width: 48px;
+        }
+        .bottom-nav .nav-item .icon {
+            font-size: clamp(1.3rem, 3.5vw, 2rem);
+            line-height: 1.2;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.04));
+        }
+        .bottom-nav .nav-item.active {
+            color: #4f8db5;
+            background: rgba(217, 234, 247, 0.5);
+        }
+        .bottom-nav .nav-item:active {
+            transform: scale(0.92);
+        }
+        .bottom-nav .nav-item .label {
+            font-size: clamp(0.45rem, 1vw, 0.65rem);
+            letter-spacing: 0.3px;
+        }
+
+        /* ============================================================
+           5. 卡片 & 通用组件
+           ============================================================ */
+        .glass-card {
+            background: var(--white-glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: var(--radius);
+            padding: clamp(14px, 2.5vh, 24px) clamp(16px, 3vw, 28px);
+            box-shadow: 0 4px 24px rgba(79, 141, 181, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: clamp(12px, 2vh, 20px);
+        }
+
+        /* ============================================================
+           6. 主页
+           ============================================================ */
+        .home-couple {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(14px, 4vw, 36px);
+            margin: clamp(8px, 1.5vh, 20px) 0 clamp(14px, 2.5vh, 28px) 0;
+            flex-wrap: wrap;
+        }
+        .home-couple .avatar-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .home-couple .avatar {
+            width: clamp(64px, 14vw, 110px);
+            height: clamp(64px, 14vw, 110px);
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue-2), var(--blue-3));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(2rem, 6vw, 4rem);
+            box-shadow: 0 6px 24px rgba(79, 141, 181, 0.15);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            object-fit: cover;
+            overflow: hidden;
+            font-weight: 400;
+            transition: 0.3s;
+        }
+        .home-couple .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .home-couple .name {
+            font-weight: 700;
+            font-size: clamp(0.85rem, 2vw, 1.3rem);
+            color: #3d4d5e;
+        }
+        .home-couple .tag {
+            font-size: clamp(0.6rem, 1.2vw, 0.8rem);
+            background: rgba(255, 255, 255, 0.5);
+            padding: 2px clamp(10px, 2vw, 18px);
+            border-radius: 30px;
+            color: #4f8db5;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .home-couple .heart {
+            font-size: clamp(1.6rem, 4vw, 2.8rem);
+            color: #b5d4e8;
+            animation: pulse 2s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(181, 212, 232, 0.3);
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.15);
+            }
+        }
+
+        /* 纪念日卡片 */
+        .memorial-card {
+            background: var(--white-glass);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius);
+            padding: clamp(14px, 2.5vh, 24px) clamp(16px, 3vw, 28px);
+            box-shadow: 0 4px 24px rgba(79, 141, 181, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin: clamp(8px, 1.5vh, 16px) 0;
+        }
+        .memorial-card .item {
+            display: flex;
+            justify-content: space-between;
+            padding: clamp(6px, 1vh, 12px) 0;
+            border-bottom: 1px solid rgba(181, 212, 232, 0.2);
+            font-size: clamp(0.8rem, 1.8vw, 1rem);
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .memorial-card .item:last-child {
+            border-bottom: none;
+        }
+        .memorial-card .item .label {
+            color: #6b7a88;
+            font-weight: 500;
+        }
+        .memorial-card .item .value {
+            font-weight: 600;
+            color: #3d4d5e;
+            text-align: right;
+        }
+        .memorial-card .item .value .highlight {
+            color: #4f8db5;
+            font-weight: 700;
+        }
+
+        /* 今日运势 — 华丽升级版（保持蓝色调 + 金色点缀） */
+        .fortune-box {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(130% 130% at 50% -10%, rgba(255, 255, 255, 0.85), rgba(217, 234, 247, 0.38) 55%, rgba(181, 212, 232, 0.30));
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: var(--radius);
+            padding: clamp(20px, 3.5vh, 34px) clamp(16px, 3vw, 28px) clamp(18px, 3vh, 30px);
+            text-align: center;
+            margin: clamp(8px, 1.5vh, 16px) 0;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            box-shadow:
+                0 10px 44px rgba(79, 141, 181, 0.14),
+                inset 0 1px 0 rgba(255, 255, 255, 0.75),
+                inset 0 0 70px rgba(214, 178, 108, 0.10);
+        }
+        /* 流动的金色描边 */
+        .fortune-box::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1.5px;
+            background: linear-gradient(135deg,
+                    rgba(214, 178, 108, 0.9),
+                    rgba(255, 255, 255, 0.25) 28%,
+                    rgba(214, 178, 108, 0.9) 50%,
+                    rgba(255, 255, 255, 0.28) 74%,
+                    rgba(214, 178, 108, 0.9));
+            background-size: 260% 260%;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            animation: goldShimmer 6s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes goldShimmer {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 260% 50%; }
+        }
+
+        /* 四角装饰 */
+        .fortune-ornament {
+            position: absolute;
+            z-index: 1;
+            font-size: clamp(0.72rem, 1.5vw, 1rem);
+            color: #c9a25e;
+            opacity: 0.72;
+            filter: drop-shadow(0 0 6px rgba(214, 178, 108, 0.5));
+            animation: ornamentFloat 4s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        .fortune-ornament-tl { top: 10px; left: 14px; }
+        .fortune-ornament-tr { top: 10px; right: 14px; animation-delay: 0.6s; }
+        .fortune-ornament-bl { bottom: 10px; left: 14px; animation-delay: 1.2s; }
+        .fortune-ornament-br { bottom: 10px; right: 14px; animation-delay: 1.8s; }
+        @keyframes ornamentFloat {
+            from { transform: translateY(0) rotate(0deg); }
+            to { transform: translateY(-4px) rotate(10deg); }
+        }
+
+        /* 漂浮星光 */
+        .fortune-sparkle {
+            position: absolute;
+            z-index: 1;
+            color: #d9b36c;
+            font-size: clamp(0.6rem, 1.3vw, 0.9rem);
+            opacity: 0;
+            animation: sparkleBlink 2.8s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .sparkle-1 { top: 30%; left: 12%; }
+        .sparkle-2 { top: 66%; right: 10%; animation-delay: 1.4s; }
+        @keyframes sparkleBlink {
+            0%, 100% { opacity: 0; transform: scale(0.55) rotate(0deg); }
+            50% { opacity: 0.9; transform: scale(1.15) rotate(28deg); }
+        }
+
+        /* 图标背后的光晕 */
+        .fortune-halo {
+            position: absolute;
+            top: 6%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: clamp(120px, 30vw, 190px);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: radial-gradient(circle,
+                    rgba(214, 178, 108, 0.30) 0%,
+                    rgba(127, 179, 213, 0.14) 52%,
+                    transparent 74%);
+            filter: blur(3px);
+            animation: haloPulse 3.2s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes haloPulse {
+            0%, 100% { opacity: 0.65; transform: translateX(-50%) scale(0.96); }
+            50% { opacity: 1; transform: translateX(-50%) scale(1.06); }
+        }
+
+        /* 顶部小标签 */
+        .fortune-tag {
+            position: relative;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: clamp(0.55rem, 1.2vw, 0.72rem);
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #b08846;
+            background: linear-gradient(135deg, rgba(255, 247, 229, 0.9), rgba(255, 255, 255, 0.6));
+            border: 1px solid rgba(214, 178, 108, 0.5);
+            border-radius: 40px;
+            padding: 3px 13px;
+            box-shadow: 0 2px 10px rgba(214, 178, 108, 0.2);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .fortune-box .fortune-icon {
+            position: relative;
+            z-index: 2;
+            display: inline-block;
+            font-size: clamp(2.6rem, 6vw, 4rem);
+            line-height: 1.15;
+            filter: drop-shadow(0 6px 18px rgba(79, 141, 181, 0.22));
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .fortune-box .fortune-icon.reveal {
+            animation: iconPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes iconPop {
+            0% { transform: scale(0.2) rotate(-18deg); opacity: 0; }
+            60% { transform: scale(1.16) rotate(6deg); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .fortune-custom-img {
+            width: clamp(64px, 17vw, 104px);
+            height: clamp(64px, 17vw, 104px);
+            object-fit: contain;
+            vertical-align: middle;
+            filter: drop-shadow(0 6px 18px rgba(79, 141, 181, 0.25));
+        }
+
+        .fortune-box .fortune-level {
+            position: relative;
+            z-index: 2;
+            font-size: clamp(1.35rem, 3.2vw, 1.9rem);
+            font-weight: 700;
+            margin: 6px 0 2px;
+            letter-spacing: 2px;
+            background: linear-gradient(115deg,
+                    #4f8db5 15%,
+                    #7fb3d5 38%,
+                    #d9b36c 50%,
+                    #7fb3d5 62%,
+                    #4f8db5 85%);
+            background-size: 240% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: levelShine 4s linear infinite;
+        }
+        @keyframes levelShine {
+            0% { background-position: 220% 0; }
+            100% { background-position: -30% 0; }
+        }
+
+        .fortune-box .fortune-msg {
+            position: relative;
+            z-index: 2;
+            font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+            color: #5a6a78;
+            margin: 4px 0 clamp(12px, 2vh, 18px) 0;
+            line-height: 1.65;
+            font-weight: 500;
+        }
+        .fortune-box .fortune-btn {
+            position: relative;
+            z-index: 2;
+            background: linear-gradient(135deg, #6fa9cf, #4f8db5 55%, #3f7aa2);
+            border: none;
+            color: #fff;
+            padding: clamp(9px, 1.6vh, 14px) clamp(26px, 5vw, 48px);
+            border-radius: 40px;
+            font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow:
+                0 6px 20px rgba(79, 141, 181, 0.28),
+                inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                0 0 0 4px rgba(127, 179, 213, 0.12);
+            font-family: var(--font);
+            letter-spacing: 2px;
+            overflow: hidden;
+        }
+        .fortune-box .fortune-btn::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -80%;
+            width: 46%;
+            height: 220%;
+            background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+            transform: rotate(15deg);
+            animation: btnSheen 3.4s ease-in-out infinite;
+        }
+        @keyframes btnSheen {
+            0% { left: -80%; }
+            55% { left: 130%; }
+            100% { left: 130%; }
+        }
+        .fortune-box .fortune-btn:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 10px 26px rgba(79, 141, 181, 0.34),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                0 0 0 4px rgba(127, 179, 213, 0.18);
+        }
+        .fortune-box .fortune-btn:active {
+            transform: scale(0.94);
+        }
+        .fortune-box .fortune-btn.done {
+            cursor: default;
+            background: linear-gradient(135deg, #9dbdd6, #7ba7c4);
+            box-shadow:
+                0 4px 14px rgba(79, 141, 181, 0.16),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                0 0 0 4px rgba(181, 212, 232, 0.10);
+        }
+        .fortune-box .fortune-btn.done::after {
+            display: none;
+        }
+
+        /* 已揭晓印章 */
+        .fortune-seal {
+            position: absolute;
+            z-index: 3;
+            top: 14px;
+            right: 14px;
+            display: none;
+            align-items: center;
+            gap: 3px;
+            font-size: clamp(0.55rem, 1.2vw, 0.7rem);
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #fff;
+            background: linear-gradient(135deg, #d9b36c, #b08846);
+            border-radius: 8px 2px 8px 2px;
+            padding: 3px 9px;
+            box-shadow: 0 3px 12px rgba(176, 136, 70, 0.4);
+            animation: sealIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .fortune-seal.show {
+            display: inline-flex;
+        }
+        @keyframes sealIn {
+            from { transform: scale(0) rotate(20deg); opacity: 0; }
+            to { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .fortune-box .fortune-hint {
+            position: relative;
+            z-index: 2;
+            margin-top: 10px;
+            font-size: clamp(0.6rem, 1.4vw, 0.78rem);
+            color: #8a97a5;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        /* ============================================================
+           7. 写信
+           ============================================================ */
+        .letter-editor {
+            background: var(--white-glass);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius);
+            padding: clamp(14px, 2.5vh, 24px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 24px rgba(79, 141, 181, 0.08);
+        }
+        .letter-editor textarea {
+            width: 100%;
+            height: clamp(120px, 25vh, 200px);
+            border: 2px solid rgba(181, 212, 232, 0.3);
+            border-radius: var(--radius-sm);
+            padding: clamp(12px, 2vh, 18px);
+            font-size: clamp(0.85rem, 1.8vw, 1rem);
+            font-family: var(--font);
+            resize: vertical;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            outline: none;
+            transition: 0.3s;
+            color: #3d4d5e;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+        .letter-editor textarea:focus {
+            border-color: var(--blue-3);
+            box-shadow: 0 0 0 4px rgba(127, 179, 213, 0.1);
+            background: rgba(255, 255, 255, 0.7);
+        }
+        .letter-editor .send-btn {
+            margin-top: clamp(10px, 1.5vh, 16px);
+            width: 100%;
+            padding: clamp(12px, 2vh, 18px);
+            border: none;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--blue-3), var(--blue-4));
+            color: #fff;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 6px 24px rgba(79, 141, 181, 0.2);
+            font-family: var(--font);
+            letter-spacing: 2px;
+        }
+        .letter-editor .send-btn:active {
+            transform: scale(0.97);
+        }
+        .letter-editor .send-btn:disabled {
+            opacity: 0.5;
+            transform: none;
+        }
+
+        .letter-history {
+            margin-top: clamp(14px, 2.5vh, 24px);
+        }
+        .letter-history .letter-item {
+            background: var(--white-glass);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-sm);
+            padding: clamp(12px, 2vh, 18px) clamp(14px, 2.5vw, 22px);
+            margin-bottom: clamp(8px, 1.2vh, 14px);
+            border-left: 4px solid var(--blue-2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 12px rgba(79, 141, 181, 0.04);
+        }
+        .letter-history .letter-item .meta {
+            font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+            color: #8a9aa8;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .letter-history .letter-item .content {
+            font-size: clamp(0.82rem, 1.6vw, 0.95rem);
+            line-height: 1.6;
+            color: #3d4d5e;
+            word-break: break-word;
+            font-weight: 500;
+        }
+        .letter-history .empty-tip {
+            color: #8a9aa8;
+            text-align: center;
+            padding: clamp(20px, 5vh, 48px) 0;
+            font-size: clamp(0.8rem, 1.6vw, 0.95rem);
+            font-weight: 500;
+        }
+
+        /* AI 占位 */
+        .ai-placeholder {
+            margin-top: clamp(14px, 2.5vh, 24px);
+            background: var(--white-glass);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius);
+            padding: clamp(16px, 3vh, 28px) clamp(16px, 3vw, 28px);
+            border: 1px dashed var(--blue-2);
+            text-align: center;
+            box-shadow: 0 4px 24px rgba(79, 141, 181, 0.06);
+        }
+        .ai-placeholder .ai-icon {
+            font-size: clamp(2.2rem, 5vw, 3.4rem);
+            filter: drop-shadow(0 4px 12px rgba(79, 141, 181, 0.1));
+        }
+        .ai-placeholder .ai-title {
+            font-weight: 700;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            margin: 6px 0 2px 0;
+            color: #4f8db5;
+        }
+        .ai-placeholder .ai-desc {
+            font-size: clamp(0.7rem, 1.4vw, 0.85rem);
+            color: #8a9aa8;
+        }
+        .ai-placeholder .ai-btn {
+            margin-top: clamp(10px, 1.5vh, 16px);
+            background: linear-gradient(135deg, #b5d4e8, #8fc1e0);
+            border: none;
+            color: #fff;
+            padding: clamp(8px, 1.5vh, 14px) clamp(24px, 5vw, 44px);
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: clamp(0.75rem, 1.6vw, 0.9rem);
+            transition: 0.3s;
+            font-family: var(--font);
+            box-shadow: 0 4px 16px rgba(181, 212, 232, 0.2);
+        }
+        .ai-placeholder .ai-btn:active {
+            transform: scale(0.94);
+        }
+
+        /* ============================================================
+           8. 相册
+           ============================================================ */
+        .album-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(8px, 1.5vw, 16px);
+            margin: clamp(10px, 1.5vh, 16px) 0;
+        }
+        @media (min-width: 600px) {
+            .album-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        @media (min-width: 900px) {
+            .album-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+        @media (min-width: 1100px) {
+            .album-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
+        .album-grid .photo-item {
+            aspect-ratio: 1/1;
+            border-radius: clamp(14px, 2vw, 22px);
+            overflow: hidden;
+            background: rgba(181, 212, 232, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.6rem, 3vw, 2.6rem);
+            color: #b5d4e8;
+            box-shadow: 0 4px 16px rgba(79, 141, 181, 0.06);
+            position: relative;
+            cursor: pointer;
+            transition: 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .album-grid .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .album-grid .photo-item .del-btn {
+            position: absolute;
+            top: clamp(4px, 0.8vh, 8px);
+            right: clamp(4px, 0.8vh, 8px);
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: clamp(22px, 3vw, 32px);
+            height: clamp(22px, 3vw, 32px);
+            font-size: clamp(0.6rem, 1vw, 0.8rem);
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        .album-grid .photo-item:hover .del-btn,
+        .album-grid .photo-item:active .del-btn {
+            display: flex;
+        }
+        .album-grid .photo-item .del-btn:hover {
+            background: rgba(224, 108, 138, 0.7);
+        }
+
+        .album-upload-btn {
+            width: 100%;
+            padding: clamp(12px, 2vh, 18px);
+            border: 2px dashed rgba(181, 212, 232, 0.4);
+            border-radius: var(--radius-sm);
+            background: var(--white-glass);
+            backdrop-filter: blur(4px);
+            color: #4f8db5;
+            font-weight: 600;
+            font-size: clamp(0.85rem, 1.8vw, 1rem);
+            cursor: pointer;
+            transition: 0.3s;
+            font-family: var(--font);
+            letter-spacing: 1px;
+        }
+        .album-upload-btn:active {
+            background: rgba(217, 234, 247, 0.3);
+        }
+        .album-upload-btn input {
+            display: none;
+        }
+
+        /* ============================================================
+           9. 设置 (我的岛)
+           ============================================================ */
+        .settings-section {
+            background: var(--white-glass);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius);
+            padding: clamp(12px, 2vh, 20px) clamp(14px, 2.5vw, 24px);
+            margin-bottom: clamp(12px, 2vh, 18px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 24px rgba(79, 141, 181, 0.06);
+        }
+        .settings-section .section-title {
+            font-weight: 700;
+            font-size: clamp(0.75rem, 1.6vw, 0.9rem);
+            color: #6b7a88;
+            margin-bottom: clamp(8px, 1.2vh, 14px);
+            letter-spacing: 2px;
+        }
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: clamp(6px, 1vh, 12px) 0;
+            border-bottom: 1px solid rgba(181, 212, 232, 0.15);
+            font-size: clamp(0.8rem, 1.6vw, 0.95rem);
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .settings-row:last-child {
+            border-bottom: none;
+        }
+        .settings-row .label {
+            color: #6b7a88;
+            font-weight: 500;
+        }
+        .settings-row .value {
+            font-weight: 600;
+            color: #3d4d5e;
+            display: flex;
+            align-items: center;
+            gap: clamp(6px, 1vw, 12px);
+            flex-wrap: wrap;
+        }
+        .settings-row .value .mini-avatar {
+            width: clamp(28px, 4vw, 38px);
+            height: clamp(28px, 4vw, 38px);
+            border-radius: 50%;
+            background: rgba(181, 212, 232, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.9rem, 1.8vw, 1.2rem);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .settings-row .value .mini-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .settings-row .edit-btn {
+            background: rgba(217, 234, 247, 0.4);
+            border: none;
+            padding: clamp(3px, 0.6vh, 6px) clamp(10px, 2vw, 18px);
+            border-radius: 30px;
+            font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+            color: #4f8db5;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            white-space: nowrap;
+        }
+        .settings-row .edit-btn:active {
+            transform: scale(0.94);
+        }
+
+        .settings-card {
+            background: linear-gradient(145deg, rgba(217, 234, 247, 0.3), rgba(255, 255, 255, 0.5));
+            backdrop-filter: blur(8px);
+            border-radius: clamp(16px, 2.5vw, 24px);
+            padding: clamp(12px, 2vh, 20px) clamp(14px, 2.5vw, 24px);
+            margin-bottom: clamp(14px, 2.5vh, 24px);
+            display: flex;
+            gap: clamp(12px, 2vw, 24px);
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            flex-wrap: wrap;
+        }
+        .settings-card .info {
+            flex: 1;
+            min-width: 140px;
+        }
+        .settings-card .info .pair-name {
+            font-weight: 700;
+            font-size: clamp(0.95rem, 2.2vw, 1.3rem);
+            color: #3d4d5e;
+        }
+        .settings-card .info .pair-tag {
+            font-size: clamp(0.7rem, 1.4vw, 0.85rem);
+            color: #6b7a88;
+            font-weight: 500;
+        }
+        .settings-card .pair-avatar {
+            width: clamp(48px, 8vw, 72px);
+            height: clamp(48px, 8vw, 72px);
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue-2), var(--blue-3));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(79, 141, 181, 0.1);
+        }
+        .settings-card .pair-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* ============================================================
+           10. Toast
+           ============================================================ */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(60, 70, 80, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #fff;
+            padding: clamp(20px, 4vh, 36px) clamp(24px, 5vw, 44px);
+            border-radius: 24px;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-weight: 600;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+            text-align: center;
+            max-width: 90vw;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+        .toast .toast-icon {
+            font-size: clamp(2.2rem, 5vw, 3.4rem);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        /* ============================================================
+           11. 响应式微调
+           ============================================================ */
+        @media (max-width: 480px) {
+            .top-bar::after {
+                display: none;
+            }
+            .bottom-nav .nav-item .label {
+                display: none;
+            }
+            .bottom-nav .nav-item {
+                padding: 4px 8px;
+                min-width: 40px;
+            }
+            .bottom-nav .nav-item .icon {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (min-width: 600px) and (max-width: 1023px) {
+            .bottom-nav .nav-item {
+                padding: 6px 16px;
+            }
+            .bottom-nav .nav-item .icon {
+                font-size: 1.6rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .page-container {
+                padding: 12px 32px 80px 32px;
+            }
+            .home-couple .avatar {
+                width: 100px;
+                height: 100px;
+                font-size: 3.2rem;
+            }
+            .album-grid {
+                gap: 14px;
+            }
+            .top-bar {
+                padding: 20px 32px 12px 32px;
+            }
+        }
+
+        @media (min-width: 1400px) {
+            #app {
+                max-width: 1300px;
+            }
+            .home-couple .avatar {
+                width: 120px;
+                height: 120px;
+                font-size: 3.8rem;
+            }
+            .album-grid {
+                gap: 18px;
+            }
+        }
+
+        /* ============================================================
+           12. 工具 & 动画
+           ============================================================ */
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.2s steps(3, end) infinite;
+        }
+        @keyframes dots {
+            0% {
+                content: '';
+            }
+            33% {
+                content: '.';
+            }
+            66% {
+                content: '..';
+            }
+            100% {
+                content: '...';
+            }
+        }
+
+        /* 平滑滚动 & 触摸优化 */
+        .page-container {
+            -webkit-overflow-scrolling: touch;
+        }
+        button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 图片加载占位 */
+        .photo-item img {
+            background: #eef6fc;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    APP 容器
+    ============================================================ -->
+    <div id="app">
+
+        <!-- ============================================================
+        启动动画
+        ============================================================ -->
+        <div id="splash">
+            <div class="splash-slider" id="splashSlider">
+                <div class="slide active">
+                    🌊
+                    <div>八莉岛</div>
+                    <div class="sub">只属于你和他的星海</div>
+                </div>
+                <div class="slide">
+                    🎤
+                    <div>八乙女乐</div>
+                    <div class="sub">✨ 偶像 · 温柔的光</div>
+                </div>
+                <div class="slide">
+                    💕
+                    <div>绘莉奈</div>
+                    <div class="sub">📚 研究生 · 追梦的你</div>
+                </div>
+            </div>
+            <div class="splash-title">八莉岛</div>
+            <div class="splash-sub">はちりとう · 秘密基地</div>
+            <div class="splash-dots" id="splashDots">
+                <span class="active"></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <!-- ============================================================
+        登录页
+        ============================================================ -->
+        <div id="login">
+            <div class="logo">🌊</div>
+            <div class="site-name">八莉岛</div>
+            <div class="site-sub">只属于你和他的秘密基地</div>
+            <div class="input-group">
+                <input type="password" id="pwdInput" placeholder="· · · ·" maxlength="4" inputmode="numeric" />
+                <button id="loginBtn">🔓 进入</button>
+                <div class="login-error" id="loginError"></div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+        主界面
+        ============================================================ -->
+        <div id="main">
+
+            <!-- 顶栏 -->
+            <div class="top-bar">
+                <div class="title">🌊 八莉岛 <span>· 星海</span></div>
+                <div class="day-count" id="dayCount">💕 第 0 天</div>
+            </div>
+
+            <!-- 页面容器 -->
+            <div class="page-container" id="pageContainer">
+
+                <!-- ===== 主页 ===== -->
+                <div class="page active" id="pageHome">
+                    <div class="home-couple">
+                        <div class="avatar-box">
+                            <div class="avatar" id="hisAvatar">🎤</div>
+                            <div class="name">八乙女乐</div>
+                            <div class="tag">偶像</div>
+                        </div>
+                        <div class="heart">💛</div>
+                        <div class="avatar-box">
+                            <div class="avatar" id="myAvatar">📚</div>
+                            <div class="name">绘莉奈</div>
+                            <div class="tag">研究生</div>
+                        </div>
+                    </div>
+
+                    <!-- 纪念日 -->
+                    <div class="memorial-card">
+                        <div class="item">
+                            <span class="label">💕 相遇 · 白色情人节</span>
+                            <span class="value">2024.03.14</span>
+                        </div>
+                        <div class="item">
+                            <span class="label">📅 已相伴</span>
+                            <span class="value"><span class="highlight" id="daysTogether">0</span> 天</span>
+                        </div>
+                        <div class="item">
+                            <span class="label">🎂 他的生日</span>
+                            <span class="value" id="hisBirthdayCount">8月16日 · 还有 0 天</span>
+                        </div>
+                        <div class="item">
+                            <span class="label">🎂 你的生日</span>
+                            <span class="value" id="myBirthdayCount">7月7日 · 已过</span>
+                        </div>
+                    </div>
+
+                    <!-- 今日运势 -->
+                    <div class="fortune-box" id="fortuneBox">
+                        <div class="fortune-halo"></div>
+                        <span class="fortune-ornament fortune-ornament-tl">❖</span>
+                        <span class="fortune-ornament fortune-ornament-tr">✦</span>
+                        <span class="fortune-ornament fortune-ornament-bl">✦</span>
+                        <span class="fortune-ornament fortune-ornament-br">❖</span>
+                        <span class="fortune-sparkle sparkle-1">✦</span>
+                        <span class="fortune-sparkle sparkle-2">✧</span>
+                        <div class="fortune-seal" id="fortuneSeal">🎴 已揭晓</div>
+                        <div class="fortune-tag">✦ 今日签文 · 每日一次 ✦</div>
+                        <div class="fortune-icon" id="fortuneIcon">🌸</div>
+                        <div class="fortune-level" id="fortuneLevel">今日运势</div>
+                        <div class="fortune-msg" id="fortuneMsg">点击下方按钮，抽取今日签文</div>
+                        <button class="fortune-btn" id="fortuneBtn">🔮 抽签</button>
+                        <div class="fortune-hint" id="fortuneHint">✨ 每天只能抽一次，记得好好珍惜</div>
+                    </div>
+                </div>
+
+                <!-- ===== 写信 ===== -->
+                <div class="page" id="pageLetter">
+                    <div class="letter-editor">
+                        <textarea id="letterInput" placeholder="给八乙女乐写一封信吧…&#10;今天发生了什么？想对他说什么？"></textarea>
+                        <button class="send-btn" id="sendLetterBtn">💌 寄出这封信</button>
+                    </div>
+
+                    <div class="letter-history" id="letterHistory">
+                        <div class="empty-tip">📭 还没有信呢，写一封吧</div>
+                    </div>
+
+                    <!-- AI 占位 -->
+                    <div class="ai-placeholder">
+                        <div class="ai-icon">🤖</div>
+                        <div class="ai-title">跟八乙女乐聊天</div>
+                        <div class="ai-desc">✨ AI 功能开发中 · 敬请期待</div>
+                        <button class="ai-btn" id="aiPlaceholderBtn">💬 打开聊天</button>
+                    </div>
+                </div>
+
+                <!-- ===== 相册 ===== -->
+                <div class="page" id="pageAlbum">
+                    <button class="album-upload-btn" id="albumUploadBtn">
+                        📤 上传新照片
+                        <input type="file" accept="image/*" multiple id="albumFileInput" />
+                    </button>
+                    <div class="album-grid" id="albumGrid">
+                        <!-- 动态渲染 -->
+                    </div>
+                </div>
+
+                <!-- ===== 设置 ===== -->
+                <div class="page" id="pageSettings">
+                    <div class="settings-card">
+                        <div class="pair-avatar" id="settingsPairAvatar">💛</div>
+                        <div class="info">
+                            <div class="pair-name">绘莉奈 ✕ 八乙女乐</div>
+                            <div class="pair-tag">研究生 · 偶像 ｜ 2024.03.14 在八莉岛相遇</div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="section-title">👤 我的资料</div>
+                        <div class="settings-row">
+                            <span class="label">头像</span>
+                            <span class="value">
+                                <span class="mini-avatar" id="settingsMyAvatar">📚</span>
+                                <button class="edit-btn" id="editMyAvatarBtn">更换</button>
+                            </span>
+                        </div>
+                        <div class="settings-row">
+                            <span class="label">昵称</span>
+                            <span class="value">绘莉奈 <button class="edit-btn" id="editMyNameBtn">编辑</button></span>
+                        </div>
+                        <div class="settings-row">
+                            <span class="label">身份</span>
+                            <span class="value">研究生 <button class="edit-btn" id="editMyRoleBtn">编辑</button></span>
+                        </div>
+                        <div class="settings-row">
+                            <span class="label">生日</span>
+                            <span class="value">7月7日</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="section-title">🎤 他的资料</div>
+                        <div class="settings-row">
+                            <span class="label">头像</span>
+                            <span class="value">
+                                <span class="mini-avatar" id="settingsHisAvatar">🎤</span>
+                                <button class="edit-btn" id="editHisAvatarBtn">更换</button>
+                            </span>
+                        </div>
+                        <div class="settings-row">
+                            <span class="label">昵称</span>
+                            <span class="value">八乙女乐 <button class="edit-btn" id="editHisNameBtn">编辑</button></span>
+                        </div>
+                        <div class="settings-row">
+                            <span class="label">身份</span>
+                            <span class="value">偶像 <button class="edit-btn" id="editHisRoleBtn">编辑</button></span>
+                        </div>
+                        <div class="settings-row">
+                            <span class="label">生日</span>
+                            <span class="value">8月16日</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="section-title">⚙️ 其他设置</div>
+                        <div class="settings-row">
+                            <span class="label">🔐 修改登录密码</span>
+                            <span class="value"><button class="edit-btn" id="changePwdBtn">修改</button></span>
+                        </div>
+                        <div class="settings-row">
+                            <span class="label">💾 导出数据</span>
+                            <span class="value"><button class="edit-btn" id="exportDataBtn">导出</button></span>
+                        </div>
+                        <div class="settings-row">
+                            <span class="label">🗑️ 清空所有数据</span>
+                            <span class="value"><button class="edit-btn" id="clearDataBtn" style="color:#e06c8a;">清空</button></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 底部导航 -->
+            <div class="bottom-nav">
+                <button class="nav-item active" data-page="pageHome">
+                    <span class="icon">🏠</span>
+                    <span class="label">主页</span>
+                </button>
+                <button class="nav-item" data-page="pageLetter">
+                    <span class="icon">💌</span>
+                    <span class="label">写信</span>
+                </button>
+                <button class="nav-item" data-page="pageAlbum">
+                    <span class="icon">📷</span>
+                    <span class="label">相册</span>
+                </button>
+                <button class="nav-item" data-page="pageSettings">
+                    <span class="icon">⚙️</span>
+                    <span class="label">我的岛</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="toast" id="toast">
+            <span class="toast-icon" id="toastIcon">✨</span>
+            <span id="toastMsg">消息</span>
+        </div>
+    </div>
+
+    <!-- ============================================================
+    JavaScript (功能完整保留)
+    ============================================================ -->
+    <script>
+        // ============================================================
+        // 0. 配置
+        // ============================================================
+        const CONFIG = {
+            APP_ID: 'YOUR_LEANCLOUD_APP_ID',
+            APP_KEY: 'YOUR_LEANCLOUD_APP_KEY',
+            HIS_NAME: '八乙女乐',
+            MY_NAME: '绘莉奈',
+            HIS_ROLE: '偶像',
+            MY_ROLE: '研究生',
+            HIS_BIRTH: '08-16',
+            MY_BIRTH: '07-07',
+            MEET_DATE: '2024-03-14',
+            PASSWORD: '0707',
+            SITE_NAME: '八莉岛',
+        };
+
+        // ============================================================
+        // 0.5 抽签图标自定义区 — 想换图标就改这里
+        // ------------------------------------------------------------
+        // 用法：Emoji 直接填写（如 '🔮'）。
+        // 大图标 DEFAULT 以及 FORTUNES 里每个签的 icon 支持图片地址
+        //      （如 'https://xxx.com/icon.png' 或 './images/icon.png'）；
+        // 按钮 / 印章 / 提示的图标建议保持 Emoji。
+        // ============================================================
+        const ICONS = {
+            DRAW_BTN: '🔮',    // 未抽签时按钮上的图标
+            DRAWN_BTN: '🎴',   // 已抽签后按钮上的图标
+            DEFAULT: '🌸',     // 每天初始显示的大图标
+            SEAL: '🎴',        // 右上角「已揭晓」印章图标
+            HINT_EMPTY: '✨',  // 未抽签时下方提示图标
+            HINT_DONE: '🔒',   // 已抽签后下方提示图标
+        };
+
+        // ============================================================
+        // 1. LeanCloud 初始化
+        // ============================================================
+        let LCReady = false;
+        try {
+            const { APP_ID, APP_KEY } = CONFIG;
+            if (APP_ID && APP_ID !== 'YOUR_LEANCLOUD_APP_ID') {
+                AV.init({ appId: APP_ID, appKey: APP_KEY });
+                LCReady = true;
+                console.log('✅ LeanCloud 已初始化');
+            } else {
+                console.warn('⚠️ 请先配置 LeanCloud APP_ID 和 APP_KEY');
+            }
+        } catch (e) {
+            console.warn('⚠️ LeanCloud 初始化失败，将使用本地存储降级', e);
+        }
+
+        // ============================================================
+        // 2. 工具函数
+        // ============================================================
+        function formatDate(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function daysBetween(a, b) {
+            const ms = Math.abs(new Date(a) - new Date(b));
+            return Math.floor(ms / (1000 * 60 * 60 * 24));
+        }
+
+        function getToday() {
+            const d = new Date();
+            return formatDate(d);
+        }
+
+        function getTodayObj() {
+            const d = new Date();
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+
+        function getNextBirthday(birthStr) {
+            const today = getTodayObj();
+            const [m, d] = birthStr.split('-').map(Number);
+            let next = new Date(today.getFullYear(), m - 1, d);
+            if (next < today) {
+                next = new Date(today.getFullYear() + 1, m - 1, d);
+            }
+            return next;
+        }
+
+        // 签文列表：想换某个签的图标，改对应 icon 字段即可
+        // （支持 Emoji 或图片地址）
+        const FORTUNES = [
+            { level: '大吉', icon: '🌟', msg: '你眼中的星光，是他回家的方向。' },
+            { level: '大吉', icon: '🌺', msg: '今天你的笑容，会点亮他一整天。' },
+            { level: '中吉', icon: '🌸', msg: '平淡的日子，因你而变得特别。' },
+            { level: '中吉', icon: '🌙', msg: '月亮在替你传达思念。' },
+            { level: '中吉', icon: '☀️', msg: '今天的阳光，像他的拥抱一样温暖。' },
+            { level: '小吉', icon: '🍀', msg: '小小的幸运，正在悄悄靠近。' },
+            { level: '小吉', icon: '🌿', msg: '每一步都算数，他在看着你。' },
+            { level: '吉', icon: '💫', msg: '宇宙在为你俩制造相遇的契机。' },
+            { level: '吉', icon: '✨', msg: '平凡的日子里藏着闪光的奇迹。' },
+            { level: '凶', icon: '🌧️', msg: '今天或许有雨，但雨后会看见彩虹。' },
+            { level: '凶', icon: '🍂', msg: '别担心，他会在你身后默默支持。' },
+        ];
+
+        function getRandomFortune() {
+            return FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
+        }
+
+        function showToast(msg, icon = '✨', duration = 2000) {
+            const el = document.getElementById('toast');
+            const iconEl = document.getElementById('toastIcon');
+            const msgEl = document.getElementById('toastMsg');
+            iconEl.textContent = icon;
+            msgEl.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+        }
+        let toastTimer = null;
+
+        // ============================================================
+        // 3. 数据存储 (LeanCloud + localStorage 降级)
+        // ============================================================
+        class Storage {
+            async saveLetter(content) {
+                const data = { content, date: getToday(), timestamp: Date.now() };
+                if (LCReady) {
+                    try {
+                        const Letter = AV.Object.extend('Letter');
+                        const l = new Letter();
+                        l.set('content', content);
+                        l.set('date', getToday());
+                        l.set('timestamp', Date.now());
+                        await l.save();
+                        return { success: true };
+                    } catch (e) {
+                        console.warn('LeanCloud 保存失败，降级本地', e);
+                        return this.saveLetterLocal(data);
+                    }
+                } else {
+                    return this.saveLetterLocal(data);
+                }
+            }
+
+            saveLetterLocal(data) {
+                const list = JSON.parse(localStorage.getItem('letters') || '[]');
+                list.unshift(data);
+                localStorage.setItem('letters', JSON.stringify(list));
+                return { success: true };
+            }
+
+            async getLetters() {
+                if (LCReady) {
+                    try {
+                        const query = new AV.Query('Letter');
+                        query.descending('timestamp');
+                        query.limit(200);
+                        const res = await query.find();
+                        return res.map(r => ({
+                            content: r.get('content'),
+                            date: r.get('date'),
+                            timestamp: r.get('timestamp') || 0,
+                            id: r.id,
+                        }));
+                    } catch (e) {
+                        console.warn('LeanCloud 读取失败，降级本地', e);
+                        return this.getLettersLocal();
+                    }
+                } else {
+                    return this.getLettersLocal();
+                }
+            }
+
+            getLettersLocal() {
+                return JSON.parse(localStorage.getItem('letters') || '[]');
+            }
+
+            async savePhoto(url) {
+                const data = { url, date: getToday(), timestamp: Date.now() };
+                if (LCReady) {
+                    try {
+                        const Photo = AV.Object.extend('Photo');
+                        const p = new Photo();
+                        p.set('url', url);
+                        p.set('date', getToday());
+                        p.set('timestamp', Date.now());
+                        await p.save();
+                        return { success: true };
+                    } catch (e) {
+                        console.warn('LeanCloud 保存照片失败', e);
+                        return this.savePhotoLocal(data);
+                    }
+                } else {
+                    return this.savePhotoLocal(data);
+                }
+            }
+
+            savePhotoLocal(data) {
+                const list = JSON.parse(localStorage.getItem('photos') || '[]');
+                list.unshift(data);
+                localStorage.setItem('photos', JSON.stringify(list));
+                return { success: true };
+            }
+
+            async getPhotos() {
+                if (LCReady) {
+                    try {
+                        const query = new AV.Query('Photo');
+                        query.descending('timestamp');
+                        query.limit(200);
+                        const res = await query.find();
+                        return res.map(r => ({
+                            url: r.get('url'),
+                            date: r.get('date'),
+                            timestamp: r.get('timestamp') || 0,
+                            id: r.id,
+                        }));
+                    } catch (e) {
+                        console.warn('LeanCloud 读取照片失败', e);
+                        return this.getPhotosLocal();
+                    }
+                } else {
+                    return this.getPhotosLocal();
+                }
+            }
+
+            getPhotosLocal() {
+                return JSON.parse(localStorage.getItem('photos') || '[]');
+            }
+
+            async deletePhoto(id) {
+                if (LCReady) {
+                    try {
+                        const query = new AV.Query('Photo');
+                        const obj = await query.get(id);
+                        await obj.destroy();
+                        return { success: true };
+                    } catch (e) {
+                        console.warn('LeanCloud 删除照片失败', e);
+                        return this.deletePhotoLocal(id);
+                    }
+                } else {
+                    return this.deletePhotoLocal(id);
+                }
+            }
+
+            deletePhotoLocal(id) {
+                let list = JSON.parse(localStorage.getItem('photos') || '[]');
+                list = list.filter((_, i) => i !== id);
+                localStorage.setItem('photos', JSON.stringify(list));
+                return { success: true };
+            }
+
+            async deleteLetter(id) {
+                if (LCReady) {
+                    try {
+                        const query = new AV.Query('Letter');
+                        const obj = await query.get(id);
+                        await obj.destroy();
+                        return { success: true };
+                    } catch (e) {
+                        console.warn('LeanCloud 删除信件失败', e);
+                        return { success: false };
+                    }
+                }
+                return { success: false };
+            }
+
+            async saveSettings(key, value) {
+                if (LCReady) {
+                    try {
+                        const query = new AV.Query('Settings');
+                        query.equalTo('key', key);
+                        const res = await query.find();
+                        if (res.length > 0) {
+                            const obj = res[0];
+                            obj.set('value', value);
+                            await obj.save();
+                        } else {
+                            const Settings = AV.Object.extend('Settings');
+                            const s = new Settings();
+                            s.set('key', key);
+                            s.set('value', value);
+                            await s.save();
+                        }
+                        return { success: true };
+                    } catch (e) {
+                        console.warn('LeanCloud 保存设置失败', e);
+                        return this.saveSettingsLocal(key, value);
+                    }
+                } else {
+                    return this.saveSettingsLocal(key, value);
+                }
+            }
+
+            saveSettingsLocal(key, value) {
+                const all = JSON.parse(localStorage.getItem('settings') || '{}');
+                all[key] = value;
+                localStorage.setItem('settings', JSON.stringify(all));
+                return { success: true };
+            }
+
+            async getSettings(key) {
+                if (LCReady) {
+                    try {
+                        const query = new AV.Query('Settings');
+                        query.equalTo('key', key);
+                        const res = await query.find();
+                        if (res.length > 0) {
+                            return res[0].get('value');
+                        }
+                        return null;
+                    } catch (e) {
+                        console.warn('LeanCloud 读取设置失败', e);
+                        return this.getSettingsLocal(key);
+                    }
+                } else {
+                    return this.getSettingsLocal(key);
+                }
+            }
+
+            getSettingsLocal(key) {
+                const all = JSON.parse(localStorage.getItem('settings') || '{}');
+                return all[key] || null;
+            }
+
+            async clearAll() {
+                if (LCReady) {
+                    try {
+                        const classes = ['Letter', 'Photo', 'Settings'];
+                        for (const cls of classes) {
+                            const query = new AV.Query(cls);
+                            const list = await query.find();
+                            for (const obj of list) {
+                                await obj.destroy();
+                            }
+                        }
+                        return { success: true };
+                    } catch (e) {
+                        console.warn('LeanCloud 清空失败', e);
+                        return { success: false };
+                    }
+                } else {
+                    localStorage.removeItem('letters');
+                    localStorage.removeItem('photos');
+                    localStorage.removeItem('settings');
+                    return { success: true };
+                }
+            }
+
+            async exportAll() {
+                const letters = await this.getLetters();
+                const photos = await this.getPhotos();
+                const settings = LCReady ? {} : JSON.parse(localStorage.getItem('settings') || '{}');
+                return { letters, photos, settings, exportDate: new Date().toISOString() };
+            }
+        }
+
+        const storage = new Storage();
+
+        // ============================================================
+        // 4. 应用状态
+        // ============================================================
+        const state = {
+            isLoggedIn: false,
+            letters: [],
+            photos: [],
+            settings: {
+                myAvatar: '📚',
+                hisAvatar: '🎤',
+                myName: CONFIG.MY_NAME,
+                hisName: CONFIG.HIS_NAME,
+                myRole: CONFIG.MY_ROLE,
+                hisRole: CONFIG.HIS_ROLE,
+            },
+        };
+
+        // ============================================================
+        // 5. DOM 引用
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const splash = $('splash');
+        const splashSlider = $('splashSlider');
+        const splashDots = $('splashDots');
+        const login = $('login');
+        const pwdInput = $('pwdInput');
+        const loginBtn = $('loginBtn');
+        const loginError = $('loginError');
+        const main = $('main');
+        const dayCount = $('dayCount');
+        const daysTogether = $('daysTogether');
+        const hisBirthdayCount = $('hisBirthdayCount');
+        const myBirthdayCount = $('myBirthdayCount');
+        const fortuneBox = $('fortuneBox');
+        const fortuneBtn = $('fortuneBtn');
+        const fortuneIcon = $('fortuneIcon');
+        const fortuneLevel = $('fortuneLevel');
+        const fortuneMsg = $('fortuneMsg');
+        const fortuneSeal = $('fortuneSeal');
+        const fortuneHint = $('fortuneHint');
+        const pageContainer = $('pageContainer');
+        const navItems = document.querySelectorAll('.nav-item');
+        const letterInput = $('letterInput');
+        const sendLetterBtn = $('sendLetterBtn');
+        const letterHistory = $('letterHistory');
+        const albumGrid = $('albumGrid');
+        const albumUploadBtn = $('albumUploadBtn');
+        const albumFileInput = $('albumFileInput');
+        const settingsMyAvatar = $('settingsMyAvatar');
+        const settingsHisAvatar = $('settingsHisAvatar');
+        const settingsPairAvatar = $('settingsPairAvatar');
+        const editMyAvatarBtn = $('editMyAvatarBtn');
+        const editHisAvatarBtn = $('editHisAvatarBtn');
+        const editMyNameBtn = $('editMyNameBtn');
+        const editHisNameBtn = $('editHisNameBtn');
+        const editMyRoleBtn = $('editMyRoleBtn');
+        const editHisRoleBtn = $('editHisRoleBtn');
+        const changePwdBtn = $('changePwdBtn');
+        const exportDataBtn = $('exportDataBtn');
+        const clearDataBtn = $('clearDataBtn');
+        const aiPlaceholderBtn = $('aiPlaceholderBtn');
+        const homeAvatarMy = document.querySelector('#pageHome .avatar-box:last-child .avatar');
+        const homeAvatarHis = document.querySelector('#pageHome .avatar-box:first-child .avatar');
+
+        // ============================================================
+        // 6. 启动动画
+        // ============================================================
+        let splashIndex = 0;
+        const slides = splashSlider.querySelectorAll('.slide');
+        const dots = splashDots.querySelectorAll('span');
+        let splashInterval;
+
+        function goSplash(index) {
+            slides.forEach((el, i) => el.classList.toggle('active', i === index));
+            dots.forEach((el, i) => el.classList.toggle('active', i === index));
+        }
+
+        function nextSplash() {
+            splashIndex = (splashIndex + 1) % slides.length;
+            goSplash(splashIndex);
+        }
+
+        splashInterval = setInterval(nextSplash, 2200);
+
+        setTimeout(() => {
+            clearInterval(splashInterval);
+            splash.classList.add('hide');
+            setTimeout(() => {
+                splash.style.display = 'none';
+                const savedPwd = localStorage.getItem('eight_island_pwd');
+                if (savedPwd === CONFIG.PASSWORD) {
+                    enterMain();
+                } else {
+                    login.classList.remove('hide');
+                }
+            }, 800);
+        }, 3500);
+
+        // ============================================================
+        // 7. 登录
+        // ============================================================
+        function enterMain() {
+            login.classList.add('hide');
+            main.classList.add('show');
+            state.isLoggedIn = true;
+            localStorage.setItem('eight_island_pwd', CONFIG.PASSWORD);
+            loadAllData();
+            updateAllUI();
+        }
+
+        loginBtn.addEventListener('click', () => {
+            const val = pwdInput.value.trim();
+            if (val === CONFIG.PASSWORD) {
+                loginError.textContent = '';
+                enterMain();
+            } else {
+                loginError.textContent = '❌ 密码不正确，再试一次吧';
+                pwdInput.value = '';
+                pwdInput.focus();
+            }
+        });
+
+        pwdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') loginBtn.click();
+        });
+
+        setTimeout(() => pwdInput.focus(), 400);
+
+        // ============================================================
+        // 8. 数据加载
+        // ============================================================
+        async function loadAllData() {
+            const letters = await storage.getLetters();
+            state.letters = letters;
+            const photos = await storage.getPhotos();
+            state.photos = photos;
+            const myAvatar = await storage.getSettings('myAvatar');
+            const hisAvatar = await storage.getSettings('hisAvatar');
+            const myName = await storage.getSettings('myName');
+            const hisName = await storage.getSettings('hisName');
+            const myRole = await storage.getSettings('myRole');
+            const hisRole = await storage.getSettings('hisRole');
+            state.settings.myAvatar = myAvatar || '📚';
+            state.settings.hisAvatar = hisAvatar || '🎤';
+            state.settings.myName = myName || CONFIG.MY_NAME;
+            state.settings.hisName = hisName || CONFIG.HIS_NAME;
+            state.settings.myRole = myRole || CONFIG.MY_ROLE;
+            state.settings.hisRole = hisRole || CONFIG.HIS_ROLE;
+            updateAllUI();
+        }
+
+        // ============================================================
+        // 9. UI 更新
+        // ============================================================
+        function updateAllUI() {
+            updateTopBar();
+            updateHome();
+            updateLetters();
+            updateAlbum();
+            updateSettings();
+        }
+
+        function updateTopBar() {
+            const meet = new Date(CONFIG.MEET_DATE);
+            const today = new Date();
+            const days = daysBetween(meet, today);
+            dayCount.textContent = `💕 第 ${days} 天`;
+            daysTogether.textContent = days;
+            const hisNext = getNextBirthday(CONFIG.HIS_BIRTH);
+            const hisDiff = daysBetween(new Date(), hisNext);
+            if (hisDiff === 0) {
+                hisBirthdayCount.textContent = '🎉 今天是他生日！';
+            } else {
+                hisBirthdayCount.textContent = `8月16日 · 还有 ${hisDiff} 天`;
+            }
+            const myNext = getNextBirthday(CONFIG.MY_BIRTH);
+            const myDiff = daysBetween(new Date(), myNext);
+            if (myDiff === 0) {
+                myBirthdayCount.textContent = '🎉 今天是你生日！';
+            } else {
+                myBirthdayCount.textContent = `7月7日 · 还有 ${myDiff} 天`;
+            }
+        }
+
+        function updateHome() {
+            const myAvatarEl = document.querySelector('#pageHome .avatar-box:last-child .avatar');
+            const hisAvatarEl = document.querySelector('#pageHome .avatar-box:first-child .avatar');
+            if (state.settings.myAvatar.startsWith('http') || state.settings.myAvatar.startsWith('data:')) {
+                myAvatarEl.innerHTML = `<img src="${state.settings.myAvatar}" alt="avatar" />`;
+            } else {
+                myAvatarEl.textContent = state.settings.myAvatar || '📚';
+            }
+            if (state.settings.hisAvatar.startsWith('http') || state.settings.hisAvatar.startsWith('data:')) {
+                hisAvatarEl.innerHTML = `<img src="${state.settings.hisAvatar}" alt="avatar" />`;
+            } else {
+                hisAvatarEl.textContent = state.settings.hisAvatar || '🎤';
+            }
+            document.querySelector('#pageHome .avatar-box:last-child .name').textContent = state.settings.myName;
+            document.querySelector('#pageHome .avatar-box:first-child .name').textContent = state.settings.hisName;
+            document.querySelector('#pageHome .avatar-box:last-child .tag').textContent = state.settings.myRole;
+            document.querySelector('#pageHome .avatar-box:first-child .tag').textContent = state.settings.hisRole;
+        }
+
+        function updateLetters() {
+            if (state.letters.length === 0) {
+                letterHistory.innerHTML = `<div class="empty-tip">📭 还没有信呢，写一封吧</div>`;
+                return;
+            }
+            let html = '';
+            state.letters.forEach((item) => {
+                const dateStr = item.date || '未知日期';
+                const content = item.content || '';
+                html += `
+                    <div class="letter-item">
+                        <div class="meta">💌 ${dateStr}</div>
+                        <div class="content">${escapeHtml(content)}</div>
+                    </div>
+                `;
+            });
+            letterHistory.innerHTML = html;
+        }
+
+        function updateAlbum() {
+            if (state.photos.length === 0) {
+                albumGrid.innerHTML =
+                    `<div style="grid-column:1/-1;text-align:center;color:#8a9aa8;padding:30px 0;font-weight:500;">📷 还没有照片，上传一张吧</div>`;
+                return;
+            }
+            let html = '';
+            state.photos.forEach((item, index) => {
+                const url = item.url || '';
+                html += `
+                    <div class="photo-item" data-index="${index}">
+                        <img src="${url}" alt="photo" loading="lazy" />
+                        <button class="del-btn" data-index="${index}">✕</button>
+                    </div>
+                `;
+            });
+            albumGrid.innerHTML = html;
+            albumGrid.querySelectorAll('.del-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.dataset.index);
+                    const item = state.photos[idx];
+                    if (!item) return;
+                    if (!confirm('确定要删除这张照片吗？')) return;
+                    const result = await storage.deletePhoto(item.id || idx);
+                    if (result.success) {
+                        showToast('已删除', '🗑️');
+                        state.photos.splice(idx, 1);
+                        updateAlbum();
+                    } else {
+                        showToast('删除失败', '❌');
+                    }
+                });
+            });
+            albumGrid.querySelectorAll('.photo-item img').forEach(img => {
+                img.addEventListener('click', () => {
+                    window.open(img.src, '_blank');
+                });
+            });
+        }
+
+        function updateSettings() {
+            const setMy = settingsMyAvatar;
+            const setHis = settingsHisAvatar;
+            const pair = settingsPairAvatar;
+            [setMy, pair].forEach(el => {
+                if (state.settings.myAvatar.startsWith('http') || state.settings.myAvatar.startsWith('data:')) {
+                    el.innerHTML = `<img src="${state.settings.myAvatar}" alt="avatar" />`;
+                } else {
+                    el.textContent = state.settings.myAvatar || '📚';
+                }
+            });
+            [setHis].forEach(el => {
+                if (state.settings.hisAvatar.startsWith('http') || state.settings.hisAvatar.startsWith('data:')) {
+                    el.innerHTML = `<img src="${state.settings.hisAvatar}" alt="avatar" />`;
+                } else {
+                    el.textContent = state.settings.hisAvatar || '🎤';
+                }
+            });
+            document.querySelector('.settings-card .pair-name').textContent =
+                `${state.settings.myName} ✕ ${state.settings.hisName}`;
+            document.querySelector('.settings-card .pair-tag').textContent =
+                `${state.settings.myRole} · ${state.settings.hisRole} ｜ 2024.03.14 在八莉岛相遇`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ============================================================
+        // 10. 导航切换
+        // ============================================================
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const pageId = item.dataset.page;
+                navItems.forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(pageId).classList.add('active');
+                pageContainer.scrollTop = 0;
+            });
+        });
+
+        // ============================================================
+        // 11. 今日运势
+        // ============================================================
+        // 图标支持两种写法：
+        //   - Emoji：直接填，如 '🌸'
+        //   - 图片：填 http(s) 或相对路径，如 'https://xxx.com/a.png'
+        function isImageIcon(icon) {
+            return /^(https?:|data:image|\/|\.\/|\.\.\/)/.test(icon) ||
+                /\.(png|jpe?g|gif|svg|webp|ico)(\?|#|$)/i.test(icon);
+        }
+
+        function renderFortuneIcon(container, icon) {
+            if (isImageIcon(icon)) {
+                container.innerHTML =
+                    '<img class="fortune-custom-img" src="' + icon + '" alt="" onerror="this.remove()" />';
+            } else {
+                container.textContent = icon;
+            }
+        }
+
+        function setFortuneDrawn(drawn) {
+            fortuneBox.classList.toggle('drawn', drawn);
+            fortuneSeal.classList.toggle('show', drawn);
+            fortuneSeal.textContent = ICONS.SEAL + ' 已揭晓';
+            fortuneBtn.classList.toggle('done', drawn);
+            fortuneBtn.textContent = drawn ?
+                ICONS.DRAWN_BTN + ' 今日已抽' :
+                ICONS.DRAW_BTN + ' 抽签';
+            fortuneHint.textContent = drawn ?
+                ICONS.HINT_DONE + ' 今日签文已揭晓 · 明天再来吧' :
+                ICONS.HINT_EMPTY + ' 每天只能抽一次，记得好好珍惜';
+        }
+
+        function loadFortune() {
+            const today = getToday();
+            const saved = localStorage.getItem('eight_island_fortune');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.date === today) {
+                        applyFortune(data.fortune, true);
+                        return;
+                    }
+                } catch (e) {}
+            }
+            renderFortuneIcon(fortuneIcon, ICONS.DEFAULT);
+            fortuneLevel.textContent = '今日运势';
+            fortuneMsg.textContent = '点击下方按钮，抽取今日签文';
+            setFortuneDrawn(false);
+        }
+
+        function applyFortune(fortune, isRestored) {
+            renderFortuneIcon(fortuneIcon, fortune.icon);
+            fortuneLevel.textContent = fortune.level;
+            fortuneMsg.textContent = fortune.msg;
+            setFortuneDrawn(true);
+            if (!isRestored) {
+                fortuneIcon.classList.remove('reveal');
+                void fortuneIcon.offsetWidth;
+                fortuneIcon.classList.add('reveal');
+            }
+        }
+
+        fortuneBtn.addEventListener('click', () => {
+            const today = getToday();
+            const saved = localStorage.getItem('eight_island_fortune');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.date === today) {
+                        showToast('今天已经抽过签啦，明天再来吧 🌙', ICONS.HINT_DONE);
+                        return;
+                    }
+                } catch (e) {}
+            }
+            const fortune = getRandomFortune();
+            applyFortune(fortune, false);
+            localStorage.setItem('eight_island_fortune', JSON.stringify({
+                date: today,
+                fortune: fortune
+            }));
+            showToast('✨ 今日签文已揭晓', ICONS.DRAWN_BTN);
+        });
+
+        // ============================================================
+        // 12. 写信
+        // ============================================================
+        sendLetterBtn.addEventListener('click', async () => {
+            const content = letterInput.value.trim();
+            if (!content) {
+                showToast('写点想说的话吧 💌', '📝');
+                return;
+            }
+            sendLetterBtn.disabled = true;
+            sendLetterBtn.textContent = '✉️ 寄送中...';
+            const result = await storage.saveLetter(content);
+            sendLetterBtn.disabled = false;
+            sendLetterBtn.textContent = '💌 寄出这封信';
+            if (result.success) {
+                showToast('💌 信件已送达他的世界！', '✨');
+                letterInput.value = '';
+                const letters = await storage.getLetters();
+                state.letters = letters;
+                updateLetters();
+            } else {
+                showToast('寄信失败，再试一次吧', '❌');
+            }
+        });
+
+        // ============================================================
+        // 13. 相册上传
+        // ============================================================
+        albumUploadBtn.addEventListener('click', () => {
+            albumFileInput.click();
+        });
+
+        albumFileInput.addEventListener('change', async (e) => {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            for (const file of files) {
+                const reader = new FileReader();
+                const dataUrl = await new Promise((resolve) => {
+                    reader.onload = (ev) => resolve(ev.target.result);
+                    reader.readAsDataURL(file);
+                });
+                let url = dataUrl;
+                if (LCReady) {
+                    try {
+                        const name = file.name || 'photo.jpg';
+                        const avFile = new AV.File(name, { base64: dataUrl.split(',')[1] });
+                        const saved = await avFile.save();
+                        url = saved.url();
+                    } catch (err) {
+                        console.warn('上传到 LeanCloud 失败，使用 DataURL', err);
+                        url = dataUrl;
+                    }
+                }
+                const result = await storage.savePhoto(url);
+                if (result.success) {
+                    const photos = await storage.getPhotos();
+                    state.photos = photos;
+                    updateAlbum();
+                    showToast('📷 照片已上传', '✨');
+                } else {
+                    showToast('上传失败', '❌');
+                }
+            }
+            albumFileInput.value = '';
+        });
+
+        // ============================================================
+        // 14. 设置功能
+        // ============================================================
+        function triggerAvatarUpload(callback) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                const dataUrl = await new Promise((resolve) => {
+                    reader.onload = (ev) => resolve(ev.target.result);
+                    reader.readAsDataURL(file);
+                });
+                let url = dataUrl;
+                if (LCReady) {
+                    try {
+                        const avFile = new AV.File(file.name || 'avatar.jpg', { base64: dataUrl.split(',')[1] });
+                        const saved = await avFile.save();
+                        url = saved.url();
+                    } catch (err) {
+                        console.warn('上传头像到 LeanCloud 失败', err);
+                    }
+                }
+                callback(url);
+            };
+            input.click();
+        }
+
+        editMyAvatarBtn.addEventListener('click', () => {
+            triggerAvatarUpload(async (url) => {
+                state.settings.myAvatar = url;
+                await storage.saveSettings('myAvatar', url);
+                updateAllUI();
+                showToast('头像已更新', '🌸');
+            });
+        });
+
+        editHisAvatarBtn.addEventListener('click', () => {
+            triggerAvatarUpload(async (url) => {
+                state.settings.hisAvatar = url;
+                await storage.saveSettings('hisAvatar', url);
+                updateAllUI();
+                showToast('头像已更新', '🌸');
+            });
+        });
+
+        function editName(current, callback) {
+            const newName = prompt('输入新名字：', current);
+            if (newName && newName.trim()) {
+                callback(newName.trim());
+            }
+        }
+
+        editMyNameBtn.addEventListener('click', () => {
+            editName(state.settings.myName, async (val) => {
+                state.settings.myName = val;
+                await storage.saveSettings('myName', val);
+                updateAllUI();
+                showToast('名字已更新', '📝');
+            });
+        });
+
+        editHisNameBtn.addEventListener('click', () => {
+            editName(state.settings.hisName, async (val) => {
+                state.settings.hisName = val;
+                await storage.saveSettings('hisName', val);
+                updateAllUI();
+                showToast('名字已更新', '📝');
+            });
+        });
+
+        function editRole(current, callback) {
+            const newRole = prompt('输入新身份：', current);
+            if (newRole && newRole.trim()) {
+                callback(newRole.trim());
+            }
+        }
+
+        editMyRoleBtn.addEventListener('click', () => {
+            editRole(state.settings.myRole, async (val) => {
+                state.settings.myRole = val;
+                await storage.saveSettings('myRole', val);
+                updateAllUI();
+                showToast('身份已更新', '🏷️');
+            });
+        });
+
+        editHisRoleBtn.addEventListener('click', () => {
+            editRole(state.settings.hisRole, async (val) => {
+                state.settings.hisRole = val;
+                await storage.saveSettings('hisRole', val);
+                updateAllUI();
+                showToast('身份已更新', '🏷️');
+            });
+        });
+
+        changePwdBtn.addEventListener('click', () => {
+            const old = prompt('请输入当前密码：');
+            if (old !== CONFIG.PASSWORD) {
+                showToast('当前密码错误', '❌');
+                return;
+            }
+            const newPwd = prompt('请输入新密码（4位数字）：');
+            if (newPwd && /^\d{4}$/.test(newPwd)) {
+                showToast('密码已修改（演示功能，刷新后恢复）', '🔐');
+            } else {
+                showToast('请输入4位数字密码', '⚠️');
+            }
+        });
+
+        exportDataBtn.addEventListener('click', async () => {
+            const data = await storage.exportAll();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `八莉岛_数据备份_${getToday()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('数据已导出 📦', '💾');
+        });
+
+        clearDataBtn.addEventListener('click', async () => {
+            if (!confirm('⚠️ 确定要清空所有数据吗？此操作不可恢复！')) return;
+            if (!confirm('再次确认：所有信件、照片都将被删除！')) return;
+            const result = await storage.clearAll();
+            if (result.success) {
+                state.letters = [];
+                state.photos = [];
+                updateAllUI();
+                showToast('所有数据已清空', '🗑️');
+            } else {
+                showToast('清空失败', '❌');
+            }
+        });
+
+        aiPlaceholderBtn.addEventListener('click', () => {
+            showToast('🤖 AI 聊天功能开发中，敬请期待！', '💫', 2500);
+        });
+
+        // ============================================================
+        // 15. 初始化
+        // ============================================================
+        loadFortune();
+
+        if (!LCReady) {
+            console.warn('⚠️ 请配置 LeanCloud APP_ID 和 APP_KEY 以启用云端数据同步');
+            console.warn('当前使用 localStorage 存储数据，换设备会丢失');
+        }
+
+        console.log('🌊 八莉岛 · 欢迎来到你们的世界 💕');
+        console.log(`💛 ${CONFIG.MY_NAME} ✕ ${CONFIG.HIS_NAME}`);
+        console.log(`📅 相遇日: ${CONFIG.MEET_DATE}`);
+    </script>
+
+</body>
+</html>
